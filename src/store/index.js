@@ -94,7 +94,6 @@ const store = createStore({
 
                 const response = responseFunction(content["content"]);
                 response.then((r) => {
-                    // console.log(r["answer"]);
                     session.messages.push({
                         content: r["answer"].length && r["answer"] != "empty" ?
                             r["answer"] : "Pardon , question difficile !",
@@ -144,7 +143,6 @@ const store = createStore({
 store.watch(
     (state) => state.sessions,
     (val) => {
-        // console.log("CHANGE: ", val);
         localStorage.setItem("vue-chat-session", JSON.stringify(val));
     }, {
         deep: true,
@@ -154,7 +152,6 @@ store.watch(
 store.watch(
     (state) => state.isUpload,
     (val) => {
-        // console.log("isUpload ", val);
         localStorage.setItem("isUpload", JSON.stringify(val));
     }, {
         deep: true,

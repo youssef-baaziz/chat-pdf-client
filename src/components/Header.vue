@@ -13,7 +13,7 @@ const uploadFile = async () => {
     try {
     let formData = new FormData();
     formData.append('uploaded_file', file.value.files[0]);
-    store.dispatch('setIsUpload',true);
+    
     file.value.value=null
     axios.post('http://127.0.0.1:8000/context',    formData,
     {
@@ -28,7 +28,7 @@ const uploadFile = async () => {
             
             localStorage.setItem('hashValue',response.data['hash_key'])
             uploadMessage(); 
-            
+            store.dispatch('setIsUpload',true);
             store.dispatch('sendMessage', {content:response.data['answer'],self_tf:false});
         })
         .catch((error) => {
