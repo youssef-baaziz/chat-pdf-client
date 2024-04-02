@@ -27,7 +27,7 @@ const submitMessage = () => {
     <div class="mt-16 sticky flex">
         <input type="text"
             class="rounded-l-xl w-full focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-            placeholder="Ask any question ..." v-model="content" @keyup.enter="submitMessage">
+            placeholder="Posez n'importe quelle question." v-model="content" @keyup.enter="submitMessage">
         <button class="w-16 rounded-r-xl hover:bg-blue-800" type="button" id="button-addon2" @click="submitMessage">
             <!-- <img  class="w-6 h-6 cursor-pointer mx-auto " src="../assets/icons/send.png" /> -->
             <i class="pi pi-send cursor-pointer  mx-auto" style="font-size: 1rem;color: white;"></i>

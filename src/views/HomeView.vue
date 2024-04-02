@@ -8,7 +8,7 @@ store.dispatch('initData')
 </script>
 
 <template>
-    <div class="w-6/12 h-6/5 container mx-auto mt-8" >
+    <div class="w-6/12 h-6/5 container mx-auto mt-8 " >
         <Header />
             <MessageList />
             <UserInput />   

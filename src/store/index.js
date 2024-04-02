@@ -91,16 +91,21 @@ const store = createStore({
                 return;
             }
             if (content["self_tf"] && isUpload) {
-
-                const response = responseFunction(content["content"]);
-                response.then((r) => {
-                    session.messages.push({
-                        content: r["answer"].length && r["answer"] != "empty" ?
-                            r["answer"] : "Pardon , question difficile !",
-                        date: new Date(),
-                        self: false,
-                    });
+                session.messages.push({
+                    content: "Pardon je suis en maintenance ! Essayer moi après .",
+                    date: new Date(),
+                    self: false,
                 });
+                return;
+                // const response = responseFunction(content["content"]);
+                // response.then((r) => {
+                //     session.messages.push({
+                //         content: r["answer"].length && r["answer"] != "empty" ?
+                //             r["answer"] : "Pardon , question difficile !",
+                //         date: new Date(),
+                //         self: false,
+                //     });
+                // });
             }
         },
         RESTART({ sessions, currentSessionId, isUpload }) {
