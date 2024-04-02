@@ -84,7 +84,7 @@ const store = createStore({
             // add answer
             if (!isUpload) {
                 session.messages.push({
-                    content: "Pardon veuillez importer le fichier PDF !",
+                    content: "Pardon, veuillez importer le fichier PDF.",
                     date: new Date(),
                     self: false,
                 });
@@ -92,7 +92,7 @@ const store = createStore({
             }
             if (content["self_tf"] && isUpload) {
                 session.messages.push({
-                    content: "Pardon je suis en maintenance ! Essayer moi après .",
+                    content: "Pardon je suis en maintenance ! Essaie-moi après.",
                     date: new Date(),
                     self: false,
                 });
