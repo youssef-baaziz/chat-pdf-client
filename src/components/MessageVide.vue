@@ -1,18 +1,6 @@
 <template>
   <div class="message w-full mx-auto" ref="messageList">
-    <ul v-if="session">
-      <li v-for="(item, index) in session.messages" :key="index">
-        <div class="main" :class="{ self: item.self }" v-if="item?.content && item.content.trim() !== ''">
-          <Message severity="info" v-if="item.isLoad">
-            <pre>{{ loadingText }}</pre>
-          </Message>
-          <Message severity="messagee" class="bg-gray-50 text max-w-0 element break-words" :closable="false" v-else>
-            <pre :class="item.self ? 'msg text-white' : 'msg'">{{ item.content }}</pre>
-          </Message>
-        </div>
-      </li>
-    </ul>
-    <!-- <div class="centered-container" v-if="session.messages.length === 0">
+    <div class="centered-container" v-if="session.messages.length === 0">
       <div class="text-center content-btn">
         <label class="form-label cursor-pointer mt-3 mb-4 row" style="width: 200%;">
           <button class="btn btn-sm btn-secondary rounded font-weight-bold btn-upload" @click="triggerFileUpload()">
@@ -27,55 +15,24 @@
       </div>
       <input type="file" accept="application/pdf,application/msword,text/plain,.docx" id="formFile" ref="fileInput"
         multiple @change="handleFileChange" style="display: none;" />
-    </div> -->
+    </div>
   </div>
 </template>
 
 <script>
 import { useStore } from "vuex";
-import Message from "primevue/message";
-import Button from 'primevue/button';
-import autoAnimate from "@formkit/auto-animate";
-import DOMPurify from 'dompurify';
 import { HTTP } from "@/lib/axios";
 
 export default {
-  components: {
-    Message,
-    "Button": Button
-  },
   data() {
     return {
       dropdown: null,
-      htmlIsLoading: `<div>` +
-        `<span class="spinner-grow text-info spinner-grow-sm mr-2" role="status" aria-hidden="true"></span>` +
-        `En train d'écrire...` +
-        `</div>`,
-      loadingText: "En train d'écrire...",
-      loading: false,
       successAlert: false,
       failedAlert: false,
       files: []
     };
   },
   methods: {
-    sanitizedContent(content) {
-      return DOMPurify.sanitize(content);
-    },
-    adjustScrollbar() {
-      const container = this.$refs.messageList;
-      if (container) {
-        const bodyHeight = window.innerHeight;
-        const contentHeight = container.scrollHeight;
-        // Adjust the height of the container
-        if (contentHeight < bodyHeight) {
-          container.style.height = `${contentHeight}px`;
-
-        } else {
-          container.style.height = '82%'; // Default height or any max height
-        }
-      }
-    },
     triggerFileUpload() {
       this.$refs.fileInput.click();  // Programmatically clicks the hidden file input
     },
@@ -97,12 +54,13 @@ export default {
           formData.append("files", fileItem);
         });
 
-        this.getDescription();
+        this.setDescription();
         this.description.forEach(item => {
           formData.append("description", item);
         });
+
         const userData = JSON.parse(localStorage.getItem('user'));
-        
+
         formData.append("user_id",userData.id)
         fileInput.value = null;
         const response = await HTTP.post('/upload', formData, {
@@ -124,8 +82,14 @@ export default {
         this.$store.dispatch("setIsLoadUpdate", false);
       }
     },
-    getDescription() {
-      this.$emit("handleDescription");
+    setDescription() {
+      this.filesUpload.forEach((elm, index) => {
+        if (!this.description[index]) {
+          //this.$set(this.description, index, "");
+          this.description[index] = "";
+        }
+      });
+      this.$store.dispatch('setDescription', this.description);
     },
     restart() {
       this.$store.dispatch("restart");
@@ -148,37 +112,16 @@ export default {
       const currentSessionId = store.state.currentSessionId;
       return sessions.find((session) => session.id === currentSessionId);
     },
-    list_message() {
-      return this.session.messages.length;
-    },
-    isLoading() {
-      return this.$store.state.isLoad;
-    },
     description() {
       return this.$store.state.description;
+    },
+    filesUpload() {
+      return this.$store.state.filesUpload;
     }
   },
   mounted() {
-    this.dropdown = this.$refs.messageList;
-    autoAnimate(this.dropdown, { duration: 500 });
     this.$store.dispatch("restart");
     this.$store.dispatch("setIsUpload", false);
-    this.adjustScrollbar(); // Adjust on mount
-    window.addEventListener('resize', this.adjustScrollbar);
-  },
-  watch: {
-    list_message(val) {
-      this.$nextTick(() => {
-        const container = this.$refs.messageList;
-        if (container) {
-          container.scrollTop = container.scrollHeight;
-          this.adjustScrollbar();
-        }
-      });
-    }
-  },
-  beforeUnmount() {
-    window.removeEventListener('resize', this.adjustScrollbar); // Cleanup event listener
   },
 };
 </script>
@@ -255,8 +198,9 @@ export default {
 
 .btn-upload {
   width: 200%;
-  font-size: 1.4rem;
-  line-height: 60px;
+  min-width: auto;
+  font-size: 1.1rem;
+  line-height: 52px;
   background-color: #ecf0f0;
   color: rgb(101, 102, 102);
 

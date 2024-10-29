@@ -1,12 +1,14 @@
 import { createStore } from "vuex";
-import axios from "axios";
+import { HTTP } from "@/lib/axios";
+import auth from './modules/auth.js'
+
 const responseFunction = async (question) => {
     const requestData = {
         question: question,
     };
     try {
-        const response = await axios.post(
-            "http://127.0.0.1:5054/response",
+        const response = await HTTP.post(
+            "/response",
             requestData
         );
         getfileIdentifiant();
@@ -19,9 +21,9 @@ const responseFunction = async (question) => {
 };
 
 const getfileIdentifiant = () => {
-    axios.post(
-        "http://127.0.0.1:5054/files"
-    ).then((response) => {
+    const userData = JSON.parse(localStorage.getItem('user'));
+    HTTP.post("/files",{user_id:userData.id})
+    .then((response) => {
         store.dispatch('setlabelsName', response.data);
     }).catch((error) => {
         console.error("Error occurred:", error);
@@ -49,6 +51,7 @@ const store = createStore({
         isChosen: false,
         firstTimeUpload: false,
         isLoad: false,
+        isLoadUpdate: false,
         labelsName: [],
         history: [],
         sessions: [{
@@ -61,6 +64,7 @@ const store = createStore({
         currentSessionId: 1,
         filterKey: "",
         showSidebar: false,
+        chatVide: false,
         filesUpload: [],
         description: []
     },
@@ -78,11 +82,17 @@ const store = createStore({
         setIsUpload(state, value) {
             state.isUpload = value;
         },
+        setChatVide(state, value) {
+            state.chatVide = value;
+        },
         setIsChosen(state, value) {
             state.isChosen = value;
         },
         setIsLoad(state, value) {
             state.isLoad = value;
+        },
+        setIsLoadUpdate(state, value) {
+            state.isLoadUpdate = value;
         },
         setShowSide(state, value) {
             state.showSidebar = value;
@@ -157,7 +167,8 @@ const store = createStore({
         RESTART({ sessions, currentSessionId, isUpload }) {
             let session = sessions.find((item) => item.id === currentSessionId);
             //clear localStorage
-            localStorage.clear();
+            // localStorage.clear();
+            localStorage.setItem("isUpload", false);
             session.messages = [];
         },
         //
@@ -179,8 +190,14 @@ const store = createStore({
         setIsUpload(context, value) {
             context.commit("setIsUpload", value);
         },
+        setChatVide(context, value) {
+            context.commit("setChatVide", value);
+        },
         setIsLoad(context, value) {
             context.commit("setIsLoad", value);
+        },
+        setIsLoadUpdate(context, value) {
+            context.commit("setIsLoadUpdate", value);
         },
         setShowSide(context, value) {
             context.commit("setShowSide", value);
@@ -213,6 +230,9 @@ const store = createStore({
             context.commit("SET_FILTER_KEY", value);
         },
     },
+    modules: {
+        auth
+      }
 });
 
 store.watch(

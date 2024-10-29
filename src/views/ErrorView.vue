@@ -1,98 +1,83 @@
-<script setup>
-import { ref } from "vue"
-import Message from 'primevue/message';
-import axios from 'axios'
-import { useStore } from 'vuex'
-
-const store = useStore()
-const file = ref(null);
-const successAlert = ref(false);
-const failedAlert = ref(false);
-const restartAlert = ref(false);
-const uploadFile = async () => {
-    try {
-    let formData = new FormData();
-    formData.append('uploaded_file', file.value.files[0]);
-    
-    file.value.value=null
-    axios.post('http://127.0.0.1:8000/context2',    formData,
-    {
-            headers: {
-                
-                'Content-Type': 'multipart/form-data' // Ensure proper content type header
-            }
-        }
-    
-    )
-        .then((response) => {
-            
-            localStorage.setItem('hashValue',response.data['hash_key'])
-            uploadMessage(); 
-            store.dispatch('setIsUpload',true);
-            store.dispatch('sendMessage', {content:response.data['answer'],self_tf:false});
-        })
-        .catch((error) => {
-            failedMessage();
-            console.error('Error occurred:', error);
-        });
-     
-} catch (error) {
-    console.error('Error occurred:', error);
-}
-
-    
-
-}
-const restart = () => {
-    store.dispatch('restart')
-    store.dispatch('setIsUpload',false);
-}
-const uploadMessage = ()=>{
-        successAlert.value = !successAlert.value
-}
-
-const failedMessage = () =>{
-    failedAlert.value = !failedAlert.value
-}
-
-const restartMessage = () =>{
-    restartAlert.value = !restartAlert.value
-}
-
-</script>
-
 <template>
-    <header class="flex justify-between ">
-        <div>
-            <span class="text-3xl">
-                Chat
-            </span>
+    <div class="error-page">
+      <div class="image-container">
+        <img src="@/assets/error.jfif" alt="Error Image" />
+        <div class="centered-message">
+          <button @click="goHome">GO BACK HOME</button>
         </div>
-        <nav>
-            <ul class="flex space-x-4">
-                <li><label for="formFile" class="form-label">
-                        <i class="pi pi-download cursor-pointer" style="font-size: 1rem"></i>
-                        <Message class="absolute z-10" severity="success" :sticky=false v-if="successAlert":life="2000"  v-on:life-end="uploadMessage()">Fichier importé avec succès</Message>
-                        <Message class="absolute z-10" severity="error" :sticky=false v-if="failedAlert":life="2000"  v-on:life-end="failedMessage">Erreur d'importation </Message>
-                        
-                    </label></li>
-                <li @click="restart">
-                    <i class="pi pi-refresh cursor-pointer" style="font-size: 1rem" @click="restartMessage"></i>
-                    <Message class="absolute z-10" severity="info" :sticky=false v-if="restartAlert":life="2000"  v-on:life-end="restartMessage">Recommencer votre chat</Message>
-                </li>
-            </ul>
-        </nav>
-    </header>
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  export default {
+    methods: {
+      goHome() {
+        this.$router.push('/');  // Assuming Vue Router is set up
+      }
+    }
+  }
+  </script>
+  
+  <style scoped>
+  .error-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #f5f5f5;
+  }
+  
+  .image-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .image-container img {
+    max-width: 100%;
+    width: 80%;
+    height: auto;
+  }
+  
+  .centered-message {
+    position: absolute;
+    top: 84%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: white;
+  }
+  
+  .centered-message h1 {
+    font-size: 6rem;
+    font-weight: bold;
+    margin: 0;
+  }
+  
+  .centered-message p {
+    font-size: 1.5rem;
+    margin: 0.5rem 0;
+  }
+  
+  .centered-message button {
+    background-color: #289fa7;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 13px;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  
+  .centered-message button:hover {
+    background-color: #d87366;
+  }
 
-    <input type="file" accept="application/pdf" id="formFile" ref="file" v-on:change="uploadFile()" >
-</template>
-
-<style scoped>
-input {
-    display: none;
-}
-
-ul {
-    list-style: none;
-}
-</style>
+  .text-error{
+    color: black;
+  }
+  </style>
+  

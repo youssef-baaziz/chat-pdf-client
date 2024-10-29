@@ -6,25 +6,19 @@
       <h6 class="border-bottom mb-2"></h6>
       <div style="max-height: 300px;min-height: 50px; overflow-y: auto;">
         <ul class="list-group list-group-flush">
-          <li
-            class="list-group-item border-0 mb-1 col style_file_upload"
-            v-for="(file, index) in filesUpload"
-            :key="index"
-          >
+          <li class="list-group-item border-0 mb-1 col style_file_upload" v-for="(file, index) in filesUpload"
+            :key="index">
             <div class="row">
               <span class="float-left col-10">{{ isChosen ? file.name : file[1] }}</span>
               <i class="pi pi-pencil text-info mr-2" @click="showDescription[index] = !showDescription[index]"></i>
-              <i class="pi pi-trash text-danger" @click="removeFile(index, file[0])"></i>
+              <i class="pi pi-trash text-danger" @click="removeFile(index, file[0])" v-if="isChosen"></i>
             </div>
             <div class="row mt-2" v-if="showDescription[index]">
               <div class="inputr">
                 <span class="font-weight-bold mt-2">Description : </span>
                 <input v-model="description[index]" type="text" class="form-control" />
-                <div
-                  class="btn btn-secondary btn-sm mt-2 col"
-                  @click="setValueIdentifiant(isChosen ? file.name : file[1], index)"
-                  v-if="!isChosen"
-                >
+                <div class="btn btn-secondary btn-sm mt-2 col"
+                  @click="setValueIdentifiant(isChosen ? file.name : file[1], index)" v-if="!isChosen">
                   Enregistrer
                 </div>
               </div>
@@ -32,6 +26,9 @@
           </li>
         </ul>
       </div>
+      <span class="btn btn-sm btn-secondary float-right mr-2">
+        <i class="pi pi-plus"></i>
+      </span>
     </div>
     <h5 class="border-bottom mt-5"></h5>
     <h5 class="text-center">Historique</h5>
@@ -56,11 +53,8 @@
               item[1]
             }}</span>
           </template>
-          <span class="setting pr-2" 
-          v-show="showPlay === index || item[0] == selectedItem || item[0] == selectedItem2" 
-          id="dropdownMenuButton" data-toggle="dropdown" 
-          aria-haspopup="true" aria-expanded="false"
-          >
+          <span class="setting pr-2" v-show="showPlay === index || item[0] == selectedItem || item[0] == selectedItem2"
+            id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="pi pi-ellipsis-h cursor-pointer font-weight-bold style-icon"></i>
           </span>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -68,7 +62,7 @@
               <i class="pi pi-pencil mr-2"></i>
               <span>Renommer</span>
             </a>
-            <a class="dropdown-item text-danger" href="#" @click="removeItem(item)">
+            <a class="dropdown-item text-danger" href="#" @click="setToDeleteHistory(item[0])">
               <i class="pi pi-trash mr-2"></i>
               <span>Supprimer</span>
             </a>
@@ -87,17 +81,27 @@
       </div>
     </Dialog>
 
+    <Dialog v-model:visible="visibleHistory" modal header="Supprimer un Historique" :style="{ width: '25rem' }">
+      <span class="text-surface-500 dark:text-surface-400 block mb-8">
+        Êtes-vous sûr de vouloir supprimer cette Historique ?
+      </span>
+      <div class="flex justify-end gap-2">
+        <button type="button" class="btn btn-secondary" @click="visibleHistory = false">Annuler</button>
+        <button type="button" class="btn btn-danger" @click="removeItem()">Supprimer</button>
+      </div>
+    </Dialog>
+
   </div>
 </template>
 <script>
-import axios from "axios";
+import { HTTP } from "@/lib/axios";
 import { useStore } from "vuex";
 import Dialog from 'primevue/dialog';
 
 export default {
   name: "Sidebar",
-  components:{
-    "Dialog":Dialog
+  components: {
+    "Dialog": Dialog
   },
   data() {
     return {
@@ -109,11 +113,13 @@ export default {
       playing_index: [],
       show: false,
       visible: false,
+      visibleHistory: false,
       hoveredIndex: null,
       identifiant: "",
       isEditing: false,
       isClickForedit: false,
       editingItemId: null,
+      deleteHistoryId: "",
       deleteFileId: "",
       newName: "",
       history_list: [],
@@ -153,8 +159,8 @@ export default {
     },
   },
   methods: {
-    removeFile(index,file_id) {
-      if(this.isChosen == true){
+    removeFile(index, file_id) {
+      if (this.isChosen == true) {
         this.filesUpload.splice(index, 1); // Remove the file at the specified index
         this.description.splice(index, 1);
         this.showDescription.splice(index, 1);
@@ -187,7 +193,8 @@ export default {
       );
     },
     selectItem(item) {
-      this.selectedItem = item[0]; // Set the selected item
+      this.store.dispatch('setChatVide', false);
+      this.selectedItem = item[0];
       this.isEditing = false;
       this.history_list = item;
       this.getConversationChat(item);
@@ -195,17 +202,16 @@ export default {
     getConversationChat(item) {
       this.store.dispatch("restart");
       this.store.dispatch('setIsLoad', true);
-      axios
-        .post("http://127.0.0.1:5054/history", {
-          history_file_json: item[2],
-          history_id: item[0],
-        })
+      HTTP.post("/history", {
+        history_file_json: item[2],
+        history_id: item[0],
+      })
         .then((response) => {
           this.history = response.data.history;
-          console.log("hesi",this.history);
+          console.log("hesi", this.history);
           this.store.dispatch('setHistory', this.history);
           this.store.dispatch('setIsLoad', false);
-          console.log("filesUpload2",response.data.files);
+          console.log("filesUpload2", response.data.files);
           this.store.dispatch('setFilesUpload', response.data.files);
           this.store.dispatch("setIsChosen", false);
           for (let i = 0; i < this.history.length; i++) {
@@ -237,10 +243,10 @@ export default {
         });
     },
     getfileNameOfConversationChat() {
-      axios
-        .post("http://127.0.0.1:5054/files")
+      const userData = JSON.parse(localStorage.getItem('user'));
+      HTTP.post("/files", { user_id: userData.id })
         .then((response) => {
-          console.log("filesUpload",response.data);
+          console.log("filesUpload", response.data);
           this.store.dispatch("setlabelsName", response.data);
           // this.store.dispatch("setFilesUpload", []);
           // this.store.dispatch("setFilesUpload", response.data);
@@ -261,8 +267,8 @@ export default {
         return;
       }
 
-      axios
-        .post("http://127.0.0.1:5054/rename", {
+      HTTP
+        .post("/rename", {
           identifiant: this.newName,
           history_id: item[0],
         })
@@ -275,22 +281,27 @@ export default {
           console.error("Error occurred:", error);
         });
     },
-    removeItem(item) {
-      axios
-        .post("http://127.0.0.1:5054/delete", {
-          history_id: item[0],
+    setToDeleteHistory(history_id) {
+      this.visibleHistory = true;
+      this.deleteHistoryId = history_id;
+    },
+    removeItem() {
+      HTTP
+        .post("/delete", {
+          history_id: this.deleteHistoryId,
         })
         .then((response) => {
           this.getfileNameOfConversationChat()
           this.store.dispatch('setFilesUpload', []);
+          this.visibleHistory = false
         })
         .catch((error) => {
           console.error("Error occurred:", error);
         });
     },
     deleteFile() {
-      axios
-        .post("http://127.0.0.1:5054/delete-file", {
+      HTTP
+        .post("/delete-file", {
           file_id: this.deleteFileId,
         })
         .then((response) => {
@@ -302,25 +313,16 @@ export default {
           console.error("Error occurred:", error);
         });
     },
-    setDescription(){
-      this.filesUpload.forEach((elm,index) => {
-        if (!this.description[index]) {
-          //this.$set(this.description, index, "");
-          this.description[index] = "";
-        }
-      });
-      this.store.dispatch('setDescription', this.description);
-    },
-    setValueIdentifiant(filename,index){
-      console.log("filename => ",filename);
-      console.log("description => ",this.description);
-      axios.post("http://127.0.0.1:5054/edit-description", {
-          filename: filename,
-          description: this.description[index],
-        })
+    setValueIdentifiant(filename, index) {
+      console.log("filename => ", filename);
+      console.log("description => ", this.description);
+      HTTP.post("/edit-description", {
+        filename: filename,
+        description: this.description[index],
+      })
         .then((response) => {
           this.showDescription[index] = false;
-          console.log("history_list",this.history_list);
+          console.log("history_list", this.history_list);
           this.getConversationChat(this.history_list)
           this.getfileNameOfConversationChat();
         })
@@ -343,23 +345,21 @@ export default {
         }
       }
     },
-    filesUpload(val){
+    filesUpload(val) {
       console.log(val);
       if (val.length != 0) {
         if (val.files && val.files.length != 0) {
           let files = val.files;
-          files.forEach((elm,index) => {
+          console.log("hree");
+          files.forEach((elm, index) => {
             //this.description[index] = elm[2];
             // if(elm[2] != ""){
             //   this.showDescription[index] = true;
             // }
           });
         } else {
-          val.forEach((elm,index) => {
-            //this.description[index] = elm[2];
-            // if(elm[2] != ""){
-            //   this.showDescription[index] = true;
-            // }
+          val.forEach((elm, index) => {
+            this.showDescription[index] = false;
           });
         }
       }
