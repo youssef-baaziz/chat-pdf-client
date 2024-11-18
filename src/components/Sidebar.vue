@@ -56,18 +56,14 @@
       <span class="btn btn-sm btn-secondary float-right mt-1" v-if="showSave">
         <span class="font-weight-bold" @click="uploadOtherFiles()">Traiter le(s) fichier(s)</span>
       </span>
-      <div class="w-full mx-auto font-weight-bold float-left" style="color: darkslategrey;" v-if="loadingFile">
+      <div class="float-left mb-2" style="color: darkslategrey;" v-if="loadingFile">
       <ProgressSpinner style="width: 30px; height: 30px" strokeWidth="8" fill="transparent" animationDuration=".5s"
         aria-label="Custom ProgressSpinner" class="col" />
-      </div>
+    </div>
     </div>
     <h5 class="border-bottom mt-5"></h5>
     <h5 class="text-center">Historique</h5>
     <h5 class="border-bottom mb-2"></h5>
-    <span class="btn btn-md mb-2 w-100 btn-new py-2" @click="setShowNewConversation(false)">
-      <span class="float-left">Nouvelle conversation</span>
-      <i class="pi pi-pencil float-right"></i>
-    </span>
     
     <ul class="list-group list-group-flush history-list">
       <li class="list-group-item border-0 font-weight-bold mb-1 item-history" :class="item[0] == selectedItem ||
@@ -106,7 +102,15 @@
         </div>
       </li>
     </ul>
-
+    <div class="fixed-bottom d-flex justify-content-left">
+      <span 
+        class="btn btn-md mb-3 w-100 btn-new py-3 ml-2" 
+        @click="setShowNewConversation(false)" 
+        style="border: 0.5px solid black; max-width: 465px;">
+        <span class="float-left">Nouvelle conversation</span>
+        <i class="pi pi-plus-circle float-right mt-1"></i>
+      </span>
+    </div>
     <Dialog v-model:visible="visible" modal header="Supprimer un fichier" :style="{ width: '25rem' }">
       <span class="text-surface-500 dark:text-surface-400 block mb-8">
         Êtes-vous sûr de vouloir supprimer ce fichier ?
@@ -266,7 +270,6 @@ export default {
       this.selectedItem = item[0];
       this.isEditing = false;
       this.history_list = item;
-      this.$store.dispatch('setIsLoading', true);
       this.getConversationChat(item);
       this.setShowNewConversation(true)
     },
@@ -283,6 +286,7 @@ export default {
     },
     getConversationChat(item) {
       this.$store.dispatch("restart");
+      this.$store.dispatch('setIsLoading', true);
       HTTP.post("/history", {
         history_file_json: item[2],
         history_id: item[0],
@@ -310,6 +314,7 @@ export default {
               id: element["id"],
             });
           });
+          this.$store.dispatch('setIsLoading', false);
           this.$store.dispatch("setIsUpload", true);
           this.$store.dispatch("sendMessage", {
             content: response.data["answer"],
@@ -459,7 +464,6 @@ export default {
         }
       } finally {
         this.loadingFile = false;
-        this.$store.dispatch('setIsLoading', false);
         this.$store.dispatch("setIsLoadUpdate", false);
       }
     },
@@ -527,9 +531,9 @@ export default {
 <style scoped>
 .sidebar {
   height: 100%;
-  width: 500px;
-  max-width: 500px;
-  min-width: 500px !important;
+  width: 490px;
+  max-width: 490px;
+  min-width: 490px !important;
   color: black;
   min-height: 90%;
   overflow-y: auto;
@@ -569,7 +573,7 @@ export default {
 
 .text-truncated {
   display: inline-block;
-  max-width: 24ch;
+  max-width: 27ch;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -598,8 +602,7 @@ export default {
   background-color: #d5dee8;
 }
 .history-list{
-  max-height: 450px;
-  min-height: 350px; 
+  height: 100%;
   overflow-y: auto;
 }
 </style>

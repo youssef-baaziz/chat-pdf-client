@@ -1,8 +1,11 @@
 <template>
-  <div v-if="isLoading">{{ isLoading }}
-    loading...
+  <div v-if="isLoading">
+    <div class="d-flex justify-content-center align-items-center mb-2" style="color: darkslategrey;height: 90vh;">
+      <ProgressSpinner style="width: 50px; height: 50px" strokeWidth="8" fill="transparent" animationDuration=".5s"
+        aria-label="Custom ProgressSpinner" class="col" />
+    </div>
   </div>
-  <div class="message w-full mx-auto" ref="messageList" v-else>{{ isLoading }}
+  <div class="message w-full mx-auto" ref="messageList" v-else>
     <ul v-if="session">
       <li v-for="(item, index) in session.messages" :key="index">
         <div class="main" :class="{ self: item.self }" v-if="item?.content && item.content.trim() !== ''">
@@ -19,7 +22,6 @@
         </div>
       </li>
     </ul>
-    
   </div>
 </template>
 
@@ -28,12 +30,14 @@ import { useStore } from "vuex";
 import Message from "primevue/message";
 import Button from 'primevue/button';
 import autoAnimate from "@formkit/auto-animate";
+import ProgressSpinner from 'primevue/progressspinner';
 import DOMPurify from 'dompurify';
 
 export default {
   components: {
     Message,
-    "Button": Button
+    "Button": Button,
+    "ProgressSpinner": ProgressSpinner
   },
   data() {
     return {
