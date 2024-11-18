@@ -1,18 +1,16 @@
-<template>joôj
+<template>
   <div id="app" class="d-flex scroll">
     <Sidebar ref="sidebarRef" />
     <div class="flex-grow-1">
       <Header />
-      <ChatVide v-if="chatVide" />
-      <ChatWindow v-else />
-      <inputChat v-if="session.messages.length > 0" />
-        <p v-if="countdown > 0">Reconnect in {{ countdown }} seconds.</p>
+      <ChatVide v-if="showNewConversation==false" ref="messageVideRef"/>
+      <ChatWindow v-if="showNewConversation"/>
+      <inputChat v-if="showNewConversation" />
       <div v-if="showModal" class="modal">
         <div class="modal-content">
-          <h2>Your session has expired</h2>
-          <p>Please log in again to continue using the app.</p>
-          <p v-if="countdown > 0">Reconnect in {{ countdown }} seconds.</p>
-          <button @click="redirectToLogin">Reconnect Now</button>
+          <h2>Votre session a expiré</h2>
+          <p>Veuillez vous reconnecter pour continuer à utiliser l’application.</p>
+          <div @click="redirectToLogin()" class="btn btn-sm btn-dark text-white btn-connect">Reconnecter</div>
         </div>
       </div>
     </div>
@@ -25,8 +23,7 @@ import Header from '../components/Header.vue';
 import ChatWindow from '../components/MessageList.vue';
 import ChatVide from '../components/MessageVide.vue';
 import inputChat from '../components/UserInput.vue';
-import { useStore } from 'vuex';
-import jwt_decode from 'jwt-decode';
+import { useStore } from "vuex";
 
 export default {
   name: 'App',
@@ -40,50 +37,7 @@ export default {
   data() {
     return {
       openSideBar: true,
-      showModal: false,
-      token: localStorage.getItem('access_token'), // Token from localStorage
-      timer: null,
-      countdown: 120, // Countdown starts at 120 seconds (2 minutes)
     };
-  },
-  methods: {
-    updateStyle() {
-      if (window.innerWidth <= 755 || !this.openSideBar) {
-        this.store.dispatch('setShowSide', false);
-      } else {
-        this.store.dispatch('setShowSide', true);
-      }
-    },
-    redirectToLogin() {
-      localStorage.removeItem('access_token');
-      this.$router.push('/login'); // Adjust if you are using a different router
-    },
-    checkTokenExpiration() {
-      if (this.token) {
-        const decoded = jwt_decode(this.token);
-        const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
-
-        // If the token is expired, show modal
-        if (decoded.exp < currentTime) {
-          this.showModal = true; // Show modal
-          clearInterval(this.timer); // Stop checking
-          this.startCountdown(); // Start the countdown
-        }
-      } else {
-        this.showModal = true; // Show modal if no token
-      }
-    },
-    startCountdown() {
-      this.countdown = 120; // Reset countdown to 120 seconds
-      this.timer = setInterval(() => {
-        if (this.countdown > 0) {
-          this.countdown--;
-        } else {
-          clearInterval(this.timer); // Clear the interval when countdown reaches 0
-          this.redirectToLogin(); // Redirect to login automatically after countdown
-        }
-      }, 1000); // Update countdown every second
-    },
   },
   computed: {
     store() {
@@ -92,8 +46,8 @@ export default {
     showSidebar() {
       return this.store.state.showSidebar;
     },
-    chatVide() {
-      return this.store.state.chatVide;
+    showModal() {
+      return this.store.state.activeComponent;
     },
     session() {
       const store = useStore();
@@ -101,23 +55,31 @@ export default {
       const currentSessionId = store.state.currentSessionId;
       return sessions.find((session) => session.id === currentSessionId);
     },
+    showNewConversation() {
+      return this.store.state.showNewConversation;
+    },
   },
-  mounted() {
-    this.store.dispatch('setChatVide', true);
-    this.checkTokenExpiration();
-
-    // Periodically check for token expiration every minute
-    this.timer = setInterval(() => {
-      this.checkTokenExpiration();
-    }, 60000); // Check every 60 seconds
+  methods: {
+    async redirectToLogin() {
+      await this.$store.dispatch('auth/signOut');
+      this.$router.push({ name: 'login' });
+      this.$store.dispatch('setActiveComponent',false);
+    },
+    updateStyle() {
+      if (window.innerWidth <= 755 || !this.openSideBar) {
+        this.$store.dispatch('setShowSide', false);
+      } else {
+        this.$store.dispatch('setShowSide', true);
+      }
+    }
   },
   created() {
     this.$store.dispatch("initData");
+    this.$store.dispatch('setShowTrait', false);
     window.addEventListener('resize', this.updateStyle);
     this.updateStyle();
   },
   beforeDestroy() {
-    clearInterval(this.timer);
     window.removeEventListener('resize', this.updateStyle);
   },
 };
@@ -151,5 +113,13 @@ export default {
   padding: 20px;
   border-radius: 8px;
   text-align: center;
+}
+
+.btn-connect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px auto 0;
+  width: 10%;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div class="sidebar bg-light p-3" v-if="showSidebar">
-    <i class=" pi pi-bars h5" @click="toggleSidebar()"></i>
-    <div v-if="filesUpload.length">
+    <i class=" pi pi-bars h5 fixed-top mt-2 ml-1" @click="toggleSidebar()"></i>
+    <div v-if="filesUpload.length > 0">
       <h5 class="text-center">Fichiers sélectionnés</h5>
       <h6 class="border-bottom mb-2"></h6>
       <div style="max-height: 300px;min-height: 50px; overflow-y: auto;">
@@ -11,7 +11,7 @@
             <div class="row">
               <span class="float-left col-10">{{ isChosen ? file.name : file[1] }}</span>
               <i class="pi pi-pencil text-info mr-2" @click="showDescription[index] = !showDescription[index]"></i>
-              <i class="pi pi-trash text-danger" @click="removeFile(index, file[0])" v-if="isChosen"></i>
+              <i class="pi pi-trash text-danger" @click="removeFile(index)" v-if="isChosen"></i>
             </div>
             <div class="row mt-2" v-if="showDescription[index]">
               <div class="inputr">
@@ -26,14 +26,50 @@
           </li>
         </ul>
       </div>
-      <span class="btn btn-sm btn-secondary float-right mr-2">
-        <i class="pi pi-plus"></i>
+      <h5 class="text-center" v-if="showSave">les autres Fichiers sélectionnés</h5>
+      <h6 class="border-bottom mb-2" v-if="showSave"></h6>
+      <div style="max-height: 200px;min-height: 50px; overflow-y: auto;" v-if="showSave">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item border-0 mb-1 col style_file_upload" v-for="(file, index) in otherFiles"
+            :key="index">
+            <div class="row">
+              <span class="float-left col-10">{{ file.name }}</span>
+              <i class="pi pi-pencil text-info mr-2" @click="showNewDescription[index] = !showNewDescription[index]"></i>
+              <i class="pi pi-trash text-danger" @click="removeOtherFile(index)"></i>
+            </div>
+            <div class="row mt-2" v-if="showNewDescription[index]">
+              <div class="inputr">
+                <span class="font-weight-bold mt-2">Description : </span>
+                <input v-model="new_descriptions[index]" type="text" class="form-control" />
+                <div class="btn btn-secondary btn-sm mt-2 col"
+                  @click="setValueIdentifiant(file.name , index)" v-if="!isChosenOther">
+                  Enregistrer
+                </div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <span class="btn btn-sm btn-secondary float-left mt-1" v-if="!showSave">
+        <span class="font-weight-bold" @click="triggerFileUpload()">Ajouter autre(s) fichier(s)</span>
       </span>
+      <span class="btn btn-sm btn-secondary float-right mt-1" v-if="showSave">
+        <span class="font-weight-bold" @click="uploadOtherFiles()">Traiter le(s) fichier(s)</span>
+      </span>
+      <div class="w-full mx-auto font-weight-bold float-left" style="color: darkslategrey;" v-if="loadingFile">
+      <ProgressSpinner style="width: 30px; height: 30px" strokeWidth="8" fill="transparent" animationDuration=".5s"
+        aria-label="Custom ProgressSpinner" class="col" />
+      </div>
     </div>
     <h5 class="border-bottom mt-5"></h5>
     <h5 class="text-center">Historique</h5>
     <h5 class="border-bottom mb-2"></h5>
-    <ul class="list-group list-group-flush">
+    <span class="btn btn-md mb-2 w-100 btn-new py-2" @click="setShowNewConversation(false)">
+      <span class="float-left">Nouvelle conversation</span>
+      <i class="pi pi-pencil float-right"></i>
+    </span>
+    
+    <ul class="list-group list-group-flush history-list">
       <li class="list-group-item border-0 font-weight-bold mb-1 item-history" :class="item[0] == selectedItem ||
         item[0] == selectedItem2 ||
         isItemHovered(item)
@@ -90,6 +126,8 @@
         <button type="button" class="btn btn-danger" @click="removeItem()">Supprimer</button>
       </div>
     </Dialog>
+    <input type="file" accept="application/pdf,application/msword,text/plain,.docx" id="formFile" ref="fileInput"
+          multiple @change="handleFileChange" style="display: none;" />
 
   </div>
 </template>
@@ -97,11 +135,13 @@
 import { HTTP } from "@/lib/axios";
 import { useStore } from "vuex";
 import Dialog from 'primevue/dialog';
+import ProgressSpinner from 'primevue/progressspinner';
 
 export default {
   name: "Sidebar",
   components: {
-    "Dialog": Dialog
+    "Dialog": Dialog,
+    "ProgressSpinner": ProgressSpinner,
   },
   data() {
     return {
@@ -124,7 +164,13 @@ export default {
       newName: "",
       history_list: [],
       description: [],
+      new_descriptions: [],
       showDescription: [],
+      showNewDescription: [],
+      otherFiles: [],
+      showSave: false,
+      isChosenOther: false,
+      loadingFile: false
     };
   },
   computed: {
@@ -157,20 +203,43 @@ export default {
     showSidebar() {
       return this.store.state.showSidebar;
     },
+    showNewConversation() {
+      return this.store.state.showNewConversation;
+    },
+    activeSetDescription() {
+      return this.$store.state.activeSetDescription;
+    },
+    descriptionSet() {
+      console.log("udfugufg",this.$store.state.descriptionSet);
+      return this.$store.state.descriptionSet;
+    },
   },
   methods: {
-    removeFile(index, file_id) {
-      if (this.isChosen == true) {
-        this.filesUpload.splice(index, 1); // Remove the file at the specified index
-        this.description.splice(index, 1);
-        this.showDescription.splice(index, 1);
-      } else {
-        this.visible = true;
-        this.deleteFileId = file_id;
+    removeFile(index) {
+      this.filesUpload.splice(index, 1); // Remove the file at the specified index
+      this.description.splice(index, 1);
+      this.showDescription.splice(index, 1);
+    },
+    removeOtherFile(index) {
+      this.otherFiles.splice(index, 1);
+      this.description.splice(index, 1);
+      this.showNewDescription.splice(index, 1);
+      if(this.otherFiles.length == 0){
+        this.showSave = false;
       }
     },
     toggleSidebar() {
-      this.store.dispatch('setShowSide', false);
+      this.$store.dispatch('setShowSide', false);
+    },
+    setShowNewConversation(statut) {
+      this.$store.dispatch('setShowNewConversation', statut);
+      this.$store.dispatch('setActiveSetDescription',false);
+      this.description = [];
+      this.$store.dispatch('setShowTrait', false);
+      if(statut == false){
+        this.selectedItem = 0
+        this.$store.dispatch('setFilesUpload', []);
+      }
     },
     handleMouseOver(index, item) {
       this.hoveredIndex = index;
@@ -193,27 +262,36 @@ export default {
       );
     },
     selectItem(item) {
-      this.store.dispatch('setChatVide', false);
+      this.$store.dispatch('setChatVide', false);
       this.selectedItem = item[0];
       this.isEditing = false;
       this.history_list = item;
+      this.$store.dispatch('setIsLoading', true);
       this.getConversationChat(item);
+      this.setShowNewConversation(true)
+    },
+    getFilesByHistory(history_id){
+      HTTP.post("/files-by-history", {
+        history_id: history_id,
+      })
+        .then((response) => {
+          this.$store.dispatch('setFilesUpload', response.data.files);
+        })
+        .catch((error) => {
+          console.error("Error occurred:", error);
+        });
     },
     getConversationChat(item) {
-      this.store.dispatch("restart");
-      this.store.dispatch('setIsLoad', true);
+      this.$store.dispatch("restart");
       HTTP.post("/history", {
         history_file_json: item[2],
         history_id: item[0],
       })
         .then((response) => {
           this.history = response.data.history;
-          console.log("hesi", this.history);
-          this.store.dispatch('setHistory', this.history);
-          this.store.dispatch('setIsLoad', false);
-          console.log("filesUpload2", response.data.files);
-          this.store.dispatch('setFilesUpload', response.data.files);
-          this.store.dispatch("setIsChosen", false);
+          this.$store.dispatch('setHistory', this.history);
+          this.getFilesByHistory(item[0])
+          this.$store.dispatch("setIsChosen", false);
           for (let i = 0; i < this.history.length; i++) {
             this.playing_index[i] = false;
           }
@@ -232,8 +310,8 @@ export default {
               id: element["id"],
             });
           });
-          this.store.dispatch("setIsUpload", true);
-          this.store.dispatch("sendMessage", {
+          this.$store.dispatch("setIsUpload", true);
+          this.$store.dispatch("sendMessage", {
             content: response.data["answer"],
             self_tf: false,
           });
@@ -246,10 +324,9 @@ export default {
       const userData = JSON.parse(localStorage.getItem('user'));
       HTTP.post("/files", { user_id: userData.id })
         .then((response) => {
-          console.log("filesUpload", response.data);
-          this.store.dispatch("setlabelsName", response.data);
-          // this.store.dispatch("setFilesUpload", []);
-          // this.store.dispatch("setFilesUpload", response.data);
+          this.$store.dispatch("setlabelsName", response.data);
+          // this.$store.dispatch("setFilesUpload", []);
+          // this.$store.dispatch("setFilesUpload", response.data);
         })
         .catch((error) => {
           console.error("Error occurred:", error);
@@ -292,7 +369,7 @@ export default {
         })
         .then((response) => {
           this.getfileNameOfConversationChat()
-          this.store.dispatch('setFilesUpload', []);
+          this.$store.dispatch('setFilesUpload', []);
           this.visibleHistory = false
         })
         .catch((error) => {
@@ -314,21 +391,92 @@ export default {
         });
     },
     setValueIdentifiant(filename, index) {
-      console.log("filename => ", filename);
-      console.log("description => ", this.description);
       HTTP.post("/edit-description", {
         filename: filename,
         description: this.description[index],
       })
         .then((response) => {
           this.showDescription[index] = false;
-          console.log("history_list", this.history_list);
           this.getConversationChat(this.history_list)
           this.getfileNameOfConversationChat();
         })
         .catch((error) => {
           console.error("Error occurred:", error);
         });
+    },
+    triggerFileUpload() {
+      this.$refs.fileInput.click();  // Programmatically clicks the hidden file input
+    },
+    handleFileChange() {
+      const fileInput = this.$refs.fileInput;
+      if (fileInput && fileInput.files) {
+        this.otherFiles = Array.from(fileInput.files);
+        this.otherFiles.forEach((file,index) => {
+          this.new_descriptions[index] = ""
+        })
+        this.showSave = true;
+      }
+      this.isChosenOther = true;
+    },
+    async uploadOtherFiles(){
+      const fileInput = this.$refs.fileInput;
+      try {
+        this.loadingFile = true;
+        const formData = new FormData();
+        let desc = []
+        this.otherFiles.forEach((fileItem,i) => {
+          formData.append("new_files", fileItem);
+          desc[i] = ""
+        });
+
+        this.new_descriptions.forEach(item => {
+          formData.append("new_descriptions", item);
+        });
+        
+        formData.append("history_id", this.history_list[0])
+        fileInput.value = null;
+        await HTTP.post('/upload-other-files', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        }).then(()=>{
+          this.getConversationChat(this.history_list)
+          this.getfileNameOfConversationChat()
+          this.showSave = false;
+        });
+        this.uploadMessage();
+        const responseFiles = await HTTP.post("/files", { user_id: userData.id });
+        this.$store.dispatch("setlabelsName", responseFiles.data);
+        this.$store.dispatch("setIsChosen", false);
+        this.isChosenOther = false;
+        this.$store.dispatch("restart");
+        this.setShowNewConversation(false)
+        this.$store.dispatch('setIsUpload', true);
+        // this.$store.dispatch("setfirstTimeUpload", true);
+        // this.$store.dispatch('sendMessage', { content: response.data['answer'], self_tf: false });
+      } catch (error) {
+        if(error.response && error.response.status !== 401){
+          this.failedMessage()
+          console.error("Error occurred:", error);
+        }
+      } finally {
+        this.loadingFile = false;
+        this.$store.dispatch('setIsLoading', false);
+        this.$store.dispatch("setIsLoadUpdate", false);
+      }
+    },
+    setDescription(){
+      this.$store.dispatch('setDescription', this.description)
+    },
+    uploadMessage() {
+      this.$store.dispatch("setSuccessAlert", true);
+      setTimeout(() => {
+        this.$store.dispatch("setSuccessAlert", false);
+      }, 2000);
+    },
+    failedMessage() {
+      this.$store.dispatch("setFailedAlert", true);
+      setTimeout(() => {
+        this.$store.dispatch("setFailedAlert", false);
+      }, 2000);
     }
   },
   mounted() {
@@ -345,20 +493,29 @@ export default {
         }
       }
     },
+    // activeSetDescription(val){
+    //   console.log("valnnnnn",val);
+    //   console.log("descriptionfzefze",this.description);
+    //   if(val == true){
+    //     this.$store.dispatch('setDescription', this.description).then(() => {
+    //       console.log("here3");
+    //       this.$store.dispatch('setDescriptionSet', true);
+    //     });
+    //   }
+    // },
     filesUpload(val) {
-      console.log(val);
       if (val.length != 0) {
         if (val.files && val.files.length != 0) {
           let files = val.files;
-          console.log("hree");
           files.forEach((elm, index) => {
-            //this.description[index] = elm[2];
+            // this.description[index] = "";
             // if(elm[2] != ""){
             //   this.showDescription[index] = true;
             // }
           });
         } else {
           val.forEach((elm, index) => {
+            this.description[index] = elm[2];
             this.showDescription[index] = false;
           });
         }
@@ -370,10 +527,12 @@ export default {
 <style scoped>
 .sidebar {
   height: 100%;
-  width: 400px;
-  max-width: 400px;
-  min-width: 400px !important;
+  width: 500px;
+  max-width: 500px;
+  min-width: 500px !important;
   color: black;
+  min-height: 90%;
+  overflow-y: auto;
 }
 
 .item-history:hover {
@@ -430,5 +589,17 @@ export default {
 
 .style_file_upload {
   font-size: 12px;
+}
+.btn-new{
+  font-weight: 500;
+  background-color: #e3eaf2;
+}
+.btn-new:hover{
+  background-color: #d5dee8;
+}
+.history-list{
+  max-height: 450px;
+  min-height: 350px; 
+  overflow-y: auto;
 }
 </style>

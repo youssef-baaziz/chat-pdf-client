@@ -50,7 +50,7 @@ const store = createStore({
         isUpload: false,
         isChosen: false,
         firstTimeUpload: false,
-        isLoad: false,
+        isLoading: false,
         isLoadUpdate: false,
         labelsName: [],
         history: [],
@@ -63,10 +63,17 @@ const store = createStore({
         },],
         currentSessionId: 1,
         filterKey: "",
-        showSidebar: false,
+        successAlert: false,
+        failedAlert: false,
+        showSidebar: true,
+        showNewConversation: false,
         chatVide: false,
         filesUpload: [],
-        description: []
+        description: [],
+        showTrait: false,
+        activeComponent: false,
+        activeSetDescription: false,
+        descriptionSet: false
     },
     mutations: {
         INIT_DATA(state) {
@@ -82,14 +89,26 @@ const store = createStore({
         setIsUpload(state, value) {
             state.isUpload = value;
         },
+        setSuccessAlert(state, value) {
+            state.successAlert = value;
+        },
+        setActiveSetDescription(state, value) {
+            state.activeSetDescription = value;
+        },
+        setDescriptionSet(state, value) {
+            state.descriptionSet = value;
+        },
+        setFailedAlert(state, value) {
+            state.failedAlert = value;
+        },
         setChatVide(state, value) {
             state.chatVide = value;
         },
         setIsChosen(state, value) {
             state.isChosen = value;
         },
-        setIsLoad(state, value) {
-            state.isLoad = value;
+        setIsLoading(state, value) {
+            state.isLoading = value;
         },
         setIsLoadUpdate(state, value) {
             state.isLoadUpdate = value;
@@ -97,8 +116,14 @@ const store = createStore({
         setShowSide(state, value) {
             state.showSidebar = value;
         },
+        setShowNewConversation(state, value) {
+            state.showNewConversation = value;
+        },
         setfirstTimeUpload(state, value) {
             state.firstTimeUpload = value;
+        },
+        setActiveComponent(state, value) {
+            state.activeComponent = value;
         },
         setlabelsName(state, value) {
             state.labelsName = value;
@@ -111,6 +136,9 @@ const store = createStore({
         },
         setDescription(state, value) {
             state.description = value;
+        },
+        setShowTrait(state, value) {
+            state.showTrait = value;
         },
         SEND_MESSAGE({ sessions, currentSessionId, isUpload }, content, self_tf) {
             let session = sessions.find((item) => item.id === currentSessionId);
@@ -145,11 +173,12 @@ const store = createStore({
                 // });
                 session.messages.push({
                     id: this.typingMessageId,
-                    content: "En train d'écrire...",
+                    content: "loading",
                     isload: true,
                     date: new Date(),
                     self: false,
                 });
+
                 const response = responseFunction(content["content"]);
 
                 response.then((r) => {
@@ -190,17 +219,35 @@ const store = createStore({
         setIsUpload(context, value) {
             context.commit("setIsUpload", value);
         },
+        setSuccessAlert(context, value) {
+            context.commit("setSuccessAlert", value)
+        },
+        setActiveSetDescription(context, value) {
+            context.commit("setActiveSetDescription", value)
+        },
+        setDescriptionSet(context, value) {
+            context.commit("setDescriptionSet", value)
+        },
+        setFailedAlert(context, value) {
+            context.commit("setFailedAlert", value)
+        },
         setChatVide(context, value) {
             context.commit("setChatVide", value);
         },
-        setIsLoad(context, value) {
-            context.commit("setIsLoad", value);
+        setActiveComponent(context, value) {
+            context.commit("setActiveComponent", value);
+        },
+        setIsLoading(context, value) {
+            context.commit("setIsLoading", value);
         },
         setIsLoadUpdate(context, value) {
             context.commit("setIsLoadUpdate", value);
         },
         setShowSide(context, value) {
             context.commit("setShowSide", value);
+        },
+        setShowNewConversation(context, value) {
+            context.commit("setShowNewConversation", value);
         },
         setIsChosen(context, value) {
             context.commit("setIsChosen", value);
@@ -219,6 +266,9 @@ const store = createStore({
         },
         setDescription(context, value) {
             context.commit("setDescription", value);
+        },
+        setShowTrait(context, value) {
+            context.commit("setShowTrait", value);
         },
         restart(context) {
             context.commit("RESTART");

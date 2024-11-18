@@ -1,66 +1,4 @@
-/* import { HTTP } from "@/lib/axios";
-  
-  export default {
-    namespaced: true,
-    state: {
-      authenticated: false,
-      user: {},
-    },
-    getters: {
-      authenticated(state) {
-        return state.authenticated
-      },
-      user(state) {
-        return state.user
-      },
-    },
-    mutations: {
-      SET_AUTHENTICATED(state, value) {
-        state.authenticated = value
-      },
-      SET_USER(state, value) {
-        state.user = value
-      },
-    },
-    actions: {
-      async signIn({
-        commit
-      }, credentials) {
-        // await HTTP.get('/sanctum/csrf-cookie')
-        return await HTTP.post('login', credentials).then((response) => {
-          localStorage.setItem('token', response.data)
-        });
-      },
-  
-      async signOut({
-        commit
-      }) {
-        await HTTP.post('/logout')
-        localStorage.removeItem('token');
-        commit('SET_AUTHENTICATED', false)
-        commit('SET_USER', null)
-      },
-      async getUser({ commit }, credentials) {
-        return await HTTP.post('user', credentials, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-        .then((response) => {
-          commit('SET_AUTHENTICATED', true);
-          commit('SET_USER', response.data);
-        })
-        .catch(() => {
-          commit('SET_AUTHENTICATED', false);
-          commit('SET_USER', null);
-        });0
-      }
-      
-    }
-  }
-   */
-
-  import { HTTP } from "@/lib/axios";
+import { HTTP } from "@/lib/axios";
 
 export default {
   namespaced: true,
@@ -95,15 +33,17 @@ export default {
     async signIn({ commit }, credentials) {
       try {
         const response = await HTTP.post('login', credentials);
-        const token = response.data.access_token;
+        const access_token = response.data.access_token;
+        const refresh_token = response.data.refresh_token;
 
-        // Store the token in local storage and update the state
-        localStorage.setItem('authToken', token);
-        commit('SET_TOKEN', token);
+        localStorage.setItem('authToken', access_token);
+        localStorage.setItem('refreshToken', refresh_token);
+
+        commit('SET_TOKEN', access_token);
         commit('SET_AUTHENTICATED', true);
 
         // Attach the token to all HTTP requests
-        HTTP.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        HTTP.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
         return response;
       } catch (error) {
         commit('SET_AUTHENTICATED', false);

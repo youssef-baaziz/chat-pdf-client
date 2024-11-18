@@ -5,6 +5,8 @@ import 'primevue/resources/themes/lara-light-indigo/theme.css';
 import 'primeicons/primeicons.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+
 
 import { createApp } from 'vue';
 import router from '@/router';

@@ -16,7 +16,7 @@ const submitMessage = () => {
 </script>
 
 <template>
-  <div class="row">
+  <div class="row mx-auto">
     <div class="float-right py-4 mt-auto fixed-bottom col-4"></div>
     <div class="float-left py-4 mt-auto fixed-bottom col-8 mx-auto  bg-white" :style="{ left: showSidebar ? '15%' : '0%' }">
       <div class=" mb-3 mt-2 flex ">

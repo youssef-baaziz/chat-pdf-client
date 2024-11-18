@@ -1,20 +1,28 @@
 <template>
-  <div class="message w-full mx-auto" ref="messageList">
-    <div class="centered-container" v-if="session.messages.length === 0">
-      <div class="text-center content-btn">
-        <label class="form-label cursor-pointer mt-3 mb-4 row" style="width: 200%;">
-          <button class="btn btn-sm btn-secondary rounded font-weight-bold btn-upload" @click="triggerFileUpload()">
-            <i class="pi pi-spin pi-file font-weight-bold mr-4"></i>
-            <span>Ajout de fichier PDF</span>
+  <div>
+    <div class="w-full mx-auto font-weight-bold" style="color: darkslategrey;" v-if="loadingFile">
+      <span class="col">En cours de téléchargement...</span>
+      <ProgressSpinner style="width: 40px; height: 40px" strokeWidth="8" fill="transparent" animationDuration=".5s"
+        aria-label="Custom ProgressSpinner" class="col" />
+    </div>
+    <div class="message w-full mx-auto" ref="messageList">
+      <div class="centered-container" v-if="session.messages.length === 0">
+        <div class="text-center content-btn">
+          <label class="form-label cursor-pointer mt-3 mb-4 row" style="width: 130%;" v-if="!showTrait">
+            <button class="btn btn-sm btn-secondary rounded font-weight-bold btn-upload" @click="triggerFileUpload()">
+              <i class="pi pi-spin pi-file font-weight-bold mr-4"></i>
+              <span>Ajout de fichier ( PDF / TXT / DOCX )</span>
+            </button>
+          </label>
+          <button class="btn btn-sm btn-secondary rounded font-weight-bold btn-upload row" @click="uploadFile()"
+            v-if="showTrait">
+            <i class="pi pi-spin pi-cog font-weight-bold mr-4"></i>
+            <span>Traiter le(s) fichier(s)</span>
           </button>
-        </label>
-        <button class="btn btn-sm btn-secondary rounded font-weight-bold btn-upload row" @click="uploadFile()">
-          <i class="pi pi-spin pi-cog font-weight-bold mr-4"></i>
-          <span>Traité fichier PDF</span>
-        </button>
+        </div>
+        <input type="file" accept="application/pdf,application/msword,text/plain,.docx" id="formFile" ref="fileInput"
+          multiple @change="handleFileChange" style="display: none;" />
       </div>
-      <input type="file" accept="application/pdf,application/msword,text/plain,.docx" id="formFile" ref="fileInput"
-        multiple @change="handleFileChange" style="display: none;" />
     </div>
   </div>
 </template>
@@ -22,19 +30,22 @@
 <script>
 import { useStore } from "vuex";
 import { HTTP } from "@/lib/axios";
+import ProgressSpinner from 'primevue/progressspinner';
+import Message from "primevue/message";
 
 export default {
+  components: { ProgressSpinner, Message },
   data() {
     return {
       dropdown: null,
-      successAlert: false,
-      failedAlert: false,
+      loadingFile: false,
       files: []
     };
   },
   methods: {
     triggerFileUpload() {
       this.$refs.fileInput.click();  // Programmatically clicks the hidden file input
+      this.$store.dispatch('setDescription', []);
     },
     handleFileChange() {
       const fileInput = this.$refs.fileInput;
@@ -42,50 +53,74 @@ export default {
         this.files = Array.from(fileInput.files); // Convert FileList to Array
         this.$store.dispatch('setFilesUpload', this.files);
         this.$store.dispatch('setIsChosen', true);
+        
+        let desc = []
+        this.files.forEach((file,index) => {
+          desc[index] = ""
+        })
+        this.$store.dispatch('setDescription', desc);
+        this.$store.dispatch('setShowTrait', true);
       }
     },
+    setActiveSetDescriptions(){
+      console.log("here1");
+      this.$store.dispatch('setActiveSetDescription',true)
+    },
+    callSetDescription() {
+      console.log("this.$parent.$refs",this.$parent.$refs.sidebarRef);
+      this.$parent.$refs.sidebarRef.setDescription();
+    },
     async uploadFile() {
-      this.$store.dispatch("setIsLoadUpdate", true);
+      this.callSetDescription()
       const fileInput = this.$refs.fileInput;
       try {
+        let desc = []
+        this.loadingFile = true;
         const formData = new FormData();
-        console.log("files", this.files[0]);
-        this.files.forEach(fileItem => {
+        this.files.forEach((fileItem,idx) => {
           formData.append("files", fileItem);
+          desc[idx] = ""
         });
 
-        this.setDescription();
+        console.log("description cddzdz",this.description);
         this.description.forEach(item => {
-          formData.append("description", item);
+          formData.append(`description`, item);
         });
 
         const userData = JSON.parse(localStorage.getItem('user'));
 
-        formData.append("user_id",userData.id)
+        formData.append("user_id", userData.id)
         fileInput.value = null;
         const response = await HTTP.post('/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-
+        this.uploadMessage();
         const responseFiles = await HTTP.post("/files", { user_id: userData.id });
         this.$store.dispatch("setlabelsName", responseFiles.data);
 
-        this.uploadMessage(); // Display success message
         this.restart(); // Reset the state
+        this.setShowNewConversation(false)
+        this.$store.dispatch("setIsChosen", false);
         this.$store.dispatch('setIsUpload', true);
         this.$store.dispatch("setfirstTimeUpload", true);
+        this.$store.dispatch('setActiveSetDescription',false)
         this.$store.dispatch('sendMessage', { content: response.data['answer'], self_tf: false });
       } catch (error) {
-        this.failedMessage(); // Display error message
-        console.error("Error occurred:", error);
+        if(error.response && error.response.status !== 401){
+          this.failedMessage()
+          console.error("Error occurred:", error);
+        }
       } finally {
+        this.loadingFile = false;
         this.$store.dispatch("setIsLoadUpdate", false);
       }
+    },
+    setShowNewConversation(statut) {
+      this.$store.dispatch('setShowNewConversation', statut);
     },
     setDescription() {
       this.filesUpload.forEach((elm, index) => {
         if (!this.description[index]) {
-          //this.$set(this.description, index, "");
           this.description[index] = "";
         }
       });
@@ -96,10 +131,16 @@ export default {
       this.$store.dispatch("setIsUpload", false);
     },
     uploadMessage() {
-      this.successAlert = true;
+      this.$store.dispatch("setSuccessAlert", true);
+      setTimeout(() => {
+        this.$store.dispatch("setSuccessAlert", false);
+      }, 2000);
     },
     failedMessage() {
-      this.failedAlert = true;
+      this.$store.dispatch("setFailedAlert", true);
+      setTimeout(() => {
+        this.$store.dispatch("setFailedAlert", false);
+      }, 2000);
     }
   },
   computed: {
@@ -117,6 +158,22 @@ export default {
     },
     filesUpload() {
       return this.$store.state.filesUpload;
+    },
+    descriptionSet() {
+      return this.$store.state.descriptionSet;
+    },
+    showTrait() {
+      return this.$store.state.showTrait;
+    }
+  },
+  watch:{
+    descriptionSet(newValue) {
+      console.log("here2",newValue);
+      // if (newValue == true) {
+        console.log('Action in MessageVide: Uploading file');
+        this.uploadFile();
+        this.$store.dispatch('setDescriptionSet', false);
+      // }
     }
   },
   mounted() {
@@ -197,7 +254,7 @@ export default {
 }
 
 .btn-upload {
-  width: 200%;
+  width: 130%;
   min-width: auto;
   font-size: 1.1rem;
   line-height: 52px;
@@ -207,5 +264,11 @@ export default {
   i {
     font-size: 1.4rem;
   }
+}
+.message-alert{
+  width: 19rem;
+  position: absolute;
+  right: 1%;
+  top: 12%;
 }
 </style>

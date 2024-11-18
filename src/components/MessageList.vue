@@ -1,33 +1,25 @@
 <template>
-  <div class="message w-full mx-auto" ref="messageList">
+  <div v-if="isLoading">{{ isLoading }}
+    loading...
+  </div>
+  <div class="message w-full mx-auto" ref="messageList" v-else>{{ isLoading }}
     <ul v-if="session">
       <li v-for="(item, index) in session.messages" :key="index">
         <div class="main" :class="{ self: item.self }" v-if="item?.content && item.content.trim() !== ''">
-          <Message severity="info" v-if="item.isLoad">
-            <pre>{{ loadingText }}</pre>
-          </Message>
-          <Message severity="messagee" class="bg-gray-50 text max-w-0 element break-words" :closable="false" v-else>
+          <span class="msg-load float-left mr-5" v-if="item.content === 'loading'">
+            <div class="loading-dots">
+              <div></div>
+              <div></div>
+              <div></div>
+            </div>
+          </span>
+          <Message severity="messagee" class="bg-gray-50 text max-w-0 element break-words p-message-b" :closable="false" v-else>
             <pre :class="item.self ? 'msg text-white' : 'msg'">{{ item.content }}</pre>
           </Message>
         </div>
       </li>
     </ul>
-    <!-- <div class="centered-container" v-if="session.messages.length === 0">
-      <div class="text-center content-btn">
-        <label class="form-label cursor-pointer mt-3 mb-4 row" style="width: 200%;">
-          <button class="btn btn-sm btn-secondary rounded font-weight-bold btn-upload" @click="triggerFileUpload()">
-            <i class="pi pi-spin pi-file font-weight-bold mr-4"></i>
-            <span>Ajout de fichier PDF</span>
-          </button>
-        </label>
-        <button class="btn btn-sm btn-secondary rounded font-weight-bold btn-upload row" @click="uploadFile()">
-          <i class="pi pi-spin pi-cog font-weight-bold mr-4"></i>
-          <span>Traité fichier PDF</span>
-        </button>
-      </div>
-      <input type="file" accept="application/pdf,application/msword,text/plain,.docx" id="formFile" ref="fileInput"
-        multiple @change="handleFileChange" style="display: none;" />
-    </div> -->
+    
   </div>
 </template>
 
@@ -37,7 +29,6 @@ import Message from "primevue/message";
 import Button from 'primevue/button';
 import autoAnimate from "@formkit/auto-animate";
 import DOMPurify from 'dompurify';
-import { HTTP } from "@/lib/axios";
 
 export default {
   components: {
@@ -47,15 +38,6 @@ export default {
   data() {
     return {
       dropdown: null,
-      htmlIsLoading: `<div>` +
-        `<span class="spinner-grow text-info spinner-grow-sm mr-2" role="status" aria-hidden="true"></span>` +
-        `En train d'écrire...` +
-        `</div>`,
-      loadingText: "En train d'écrire...",
-      loading: false,
-      successAlert: false,
-      failedAlert: false,
-      files: []
     };
   },
   methods: {
@@ -76,67 +58,14 @@ export default {
         }
       }
     },
-    triggerFileUpload() {
-      this.$refs.fileInput.click();  // Programmatically clicks the hidden file input
+    scrollToBottom() {
+      this.$nextTick(() => {
+        const messageList = this.$refs.messageList;
+        if (messageList) {
+          messageList.scrollTop = messageList.scrollHeight;
+        }
+      });
     },
-    handleFileChange() {
-      const fileInput = this.$refs.fileInput;
-      if (fileInput && fileInput.files) {
-        this.files = Array.from(fileInput.files); // Convert FileList to Array
-        this.$store.dispatch('setFilesUpload', this.files);
-        this.$store.dispatch('setIsChosen', true);
-      }
-    },
-    async uploadFile() {
-      this.$store.dispatch("setIsLoadUpdate", true);
-      const fileInput = this.$refs.fileInput;
-      try {
-        const formData = new FormData();
-        console.log("files", this.files[0]);
-        this.files.forEach(fileItem => {
-          formData.append("files", fileItem);
-        });
-
-        this.getDescription();
-        this.description.forEach(item => {
-          formData.append("description", item);
-        });
-        const userData = JSON.parse(localStorage.getItem('user'));
-        
-        formData.append("user_id",userData.id)
-        fileInput.value = null;
-        const response = await HTTP.post('/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-
-        const responseFiles = await HTTP.post("/files", { user_id: userData.id });
-        this.$store.dispatch("setlabelsName", responseFiles.data);
-
-        this.uploadMessage(); // Display success message
-        this.restart(); // Reset the state
-        this.$store.dispatch('setIsUpload', true);
-        this.$store.dispatch("setfirstTimeUpload", true);
-        this.$store.dispatch('sendMessage', { content: response.data['answer'], self_tf: false });
-      } catch (error) {
-        this.failedMessage(); // Display error message
-        console.error("Error occurred:", error);
-      } finally {
-        this.$store.dispatch("setIsLoadUpdate", false);
-      }
-    },
-    getDescription() {
-      this.$emit("handleDescription");
-    },
-    restart() {
-      this.$store.dispatch("restart");
-      this.$store.dispatch("setIsUpload", false);
-    },
-    uploadMessage() {
-      this.successAlert = true;
-    },
-    failedMessage() {
-      this.failedAlert = true;
-    }
   },
   computed: {
     store() {
@@ -152,11 +81,8 @@ export default {
       return this.session.messages.length;
     },
     isLoading() {
-      return this.$store.state.isLoad;
+      return this.store.state.isLoading;
     },
-    description() {
-      return this.$store.state.description;
-    }
   },
   mounted() {
     this.dropdown = this.$refs.messageList;
@@ -167,15 +93,12 @@ export default {
     window.addEventListener('resize', this.adjustScrollbar);
   },
   watch: {
-    list_message(val) {
-      this.$nextTick(() => {
-        const container = this.$refs.messageList;
-        if (container) {
-          container.scrollTop = container.scrollHeight;
-          this.adjustScrollbar();
-        }
-      });
-    }
+    'session.messages': {
+      handler() {
+        this.scrollToBottom();
+      },
+      deep: true,
+    },
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.adjustScrollbar); // Cleanup event listener
@@ -206,7 +129,6 @@ export default {
   .text {
     display: inline-block;
     position: relative;
-    padding: 10px 20px;
     max-width: ~"calc(100% - 20%)";
     min-height: 30px;
     text-align: left;
@@ -239,6 +161,13 @@ export default {
   }
 }
 
+.msg-load {
+  font-family: Inter var, sans-serif;
+  font-size: 1rem;
+  margin: 10px 28px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
 .centered-container {
   display: flex;
   justify-content: center;
@@ -264,4 +193,40 @@ export default {
     font-size: 1.4rem;
   }
 }
+.loading-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.loading-dots div {
+    width: 10px;
+    height: 10px;
+    margin: 0 3px;
+    background-color: #333;
+    border-radius: 50%;
+    animation: bounce 0.6s infinite alternate;
+}
+
+.loading-dots div:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.loading-dots div:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.loading-dots div:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(-14px);
+    }
+}
+
 </style>

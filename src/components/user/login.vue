@@ -1,7 +1,7 @@
 <template>
-  <b-row class="h-100 mt-5" v-if="!authenticated">
-    <b-colxx xxs="12" md="10" class="mx-auto my-auto">
-      <b-card class="auth-card" no-body>
+  <div class="row h-100 mt-5" v-if="!authenticated">
+    <div class="mx-auto my-auto col-md-11">
+      <div class="card auth-card">
         <div class="position-relative image-side">
         </div>
         <div class="form-side col-md-6">
@@ -43,9 +43,9 @@
             </div>
           </div>
         </div>
-      </b-card>
-    </b-colxx>
-  </b-row>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -75,6 +75,7 @@ export default {
           // Dispatch Vuex actions for authentication and user data
           await this.$store.dispatch('auth/signIn', this.form);
           await this.$store.dispatch('auth/getUser');
+          this.$store.dispatch('setFilesUpload', []);
           this.$router.replace({ name: 'app' });
         } catch (error) {
           this.errors.push('Invalid Credentials');
