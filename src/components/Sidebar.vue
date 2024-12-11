@@ -1,138 +1,140 @@
 <template>
-  <div class="sidebar bg-light p-3" v-if="showSidebar">
-    <i class=" pi pi-bars h5 fixed-top mt-2 ml-1" @click="toggleSidebar()"></i>
-    <div v-if="filesUpload.length > 0">
-      <h5 class="text-center">Fichiers sélectionnés</h5>
-      <h6 class="border-bottom mb-2"></h6>
-      <div style="max-height: 300px;min-height: 50px; overflow-y: auto;">
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item border-0 mb-1 col style_file_upload" v-for="(file, index) in filesUpload"
-            :key="index">
-            <div class="row">
-              <span class="float-left col-10">{{ isChosen ? file.name : file[1] }}</span>
-              <i class="pi pi-pencil text-info mr-2" @click="showDescription[index] = !showDescription[index]"></i>
-              <i class="pi pi-trash text-danger" @click="removeFile(index)" v-if="isChosen"></i>
-            </div>
-            <div class="row mt-2" v-if="showDescription[index]">
-              <div class="inputr">
-                <span class="font-weight-bold mt-2">Description : </span>
-                <input v-model="description[index]" type="text" class="form-control" />
-                <div class="btn btn-secondary btn-sm mt-2 col"
-                  @click="setValueIdentifiant(isChosen ? file.name : file[1], index)" v-if="!isChosen">
-                  Enregistrer
+  <div class="sidebar-class bg-light" v-if="showSidebar">
+    <div class="mt-5 d-flex justify-content-left" v-if="showSidebar">
+      <span class="fixed-top ml-1 col-1" @click="toggleSidebar()">
+        <svg width="50px" height="50px" viewBox="0 0 76 76" xmlns="http://www.w3.org/2000/svg"
+          xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="full"
+          enable-background="new 0 0 76.00 76.00" xml:space="preserve" style="margin-top: 6px;">
+          <path fill="#000000" fill-opacity="1" stroke-width="0.2" stroke-linejoin="round"
+            d="M 57,19L 57,57L 19,57L 19,19L 57,19 Z M 22,54L 54,54L 54,22.0001L 22,22L 22,54 Z M 24,24.0001L 36,24.0001L 36,52L 24,52L 24,24.0001 Z M 52,36L 43.3334,36L 47,31.0001L 43,31L 38,38L 43,45L 47,45L 43.3334,40L 52,40L 52,36 Z " />
+        </svg>
+      </span>
+    </div>
+    <div class="sidebar bg-light p-3">
+      <!-- <i class=" pi pi-bars h5 fixed-top mt-2 ml-1" @click="toggleSidebar()"></i> -->
+      <div v-if="filesUpload.length > 0" class="mb-5">
+        <h5 class="text-center">Fichiers sélectionnés</h5>
+        <h6 class="border-bottom mb-2"></h6>
+        <div class="list-files">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item border-0 mb-1 col style_file_upload" v-for="(file, index) in filesUpload"
+              :key="index">
+              <div class="row">
+                <span class="float-left col-10">{{ isChosen ? file.name : file[1] }}</span>
+                <i class="pi pi-pencil text-info mr-2" @click="showDescription[index] = !showDescription[index]"></i>
+                <i class="pi pi-trash text-danger" @click="removeFile(index)" v-if="isChosen"></i>
+              </div>
+              <div class="row mt-2" v-if="showDescription[index]">
+                <div class="inputr">
+                  <span class="font-weight-bold mt-2">Description : </span>
+                  <input v-model="description[index]" type="text" class="form-control" />
+                  <div class="btn btn-secondary btn-sm mt-2 col"
+                    @click="setValueIdentifiant(isChosen ? file.name : file[1], index)" v-if="!isChosen">
+                    Enregistrer
+                  </div>
                 </div>
               </div>
-            </div>
-          </li>
-        </ul>
-      </div>
-      <h5 class="text-center" v-if="showSave">les autres Fichiers sélectionnés</h5>
-      <h6 class="border-bottom mb-2" v-if="showSave"></h6>
-      <div style="max-height: 200px;min-height: 50px; overflow-y: auto;" v-if="showSave">
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item border-0 mb-1 col style_file_upload" v-for="(file, index) in otherFiles"
-            :key="index">
-            <div class="row">
-              <span class="float-left col-10">{{ file.name }}</span>
-              <i class="pi pi-pencil text-info mr-2" @click="showNewDescription[index] = !showNewDescription[index]"></i>
-              <i class="pi pi-trash text-danger" @click="removeOtherFile(index)"></i>
-            </div>
-            <div class="row mt-2" v-if="showNewDescription[index]">
-              <div class="inputr">
-                <span class="font-weight-bold mt-2">Description : </span>
-                <input v-model="new_descriptions[index]" type="text" class="form-control" />
-                <div class="btn btn-secondary btn-sm mt-2 col"
-                  @click="setValueIdentifiant(file.name , index)" v-if="!isChosenOther">
-                  Enregistrer
-                </div>
-              </div>
-            </div>
-          </li>
-        </ul>
-      </div>
-      <span class="btn btn-sm btn-secondary float-left mt-1" v-if="!showSave">
-        <span class="font-weight-bold" @click="triggerFileUpload()">Ajouter autre(s) fichier(s)</span>
-      </span>
-      <span class="btn btn-sm btn-secondary float-right mt-1" v-if="showSave">
-        <span class="font-weight-bold" @click="uploadOtherFiles()">Traiter le(s) fichier(s)</span>
-      </span>
-      <div class="float-left mb-2" style="color: darkslategrey;" v-if="loadingFile">
-      <ProgressSpinner style="width: 30px; height: 30px" strokeWidth="8" fill="transparent" animationDuration=".5s"
-        aria-label="Custom ProgressSpinner" class="col" />
-    </div>
-    </div>
-    <h5 class="border-bottom mt-5"></h5>
-    <h5 class="text-center">Historique</h5>
-    <h5 class="border-bottom mb-2"></h5>
-    
-    <ul class="list-group list-group-flush history-list">
-      <li class="list-group-item border-0 font-weight-bold mb-1 item-history" :class="item[0] == selectedItem ||
-        item[0] == selectedItem2 ||
-        isItemHovered(item)
-        ? 'selected-item'
-        : 'unselected-item'
-        " v-for="(item, index) in labelsName" :key="index" @mouseover="handleMouseOver(index, item)"
-        @mouseleave="handleMouseLeave(item)">
-        <div>
-          <template v-if="isEditing && editingItemId === item[0]">
-            <div class="input">
-              <input v-model="newName" @blur="saveEdit(item)" @keyup.enter="saveEdit(item)" type="text"
-                class="form-control" />
-            </div>
-          </template>
-          <template v-else>
-            <span @click="selectItem(item)" class="text-truncated">{{
-              item[1]
-            }}</span>
-          </template>
-          <span class="setting pr-2" v-show="showPlay === index || item[0] == selectedItem || item[0] == selectedItem2"
-            id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="pi pi-ellipsis-h cursor-pointer font-weight-bold style-icon"></i>
-          </span>
-          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <a class="dropdown-item" href="#" @click="startEdit(item)">
-              <i class="pi pi-pencil mr-2"></i>
-              <span>Renommer</span>
-            </a>
-            <a class="dropdown-item text-danger" href="#" @click="setToDeleteHistory(item[0])">
-              <i class="pi pi-trash mr-2"></i>
-              <span>Supprimer</span>
-            </a>
-          </div>
+            </li>
+          </ul>
         </div>
-      </li>
-    </ul>
+        <h5 class="text-center" v-if="showSave">les autres Fichiers sélectionnés</h5>
+        <h6 class="border-bottom mb-2" v-if="showSave"></h6>
+        <div v-if="showSave" class="other-files">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item border-0 mb-1 col style_file_upload" v-for="(file, index) in otherFiles"
+              :key="index">
+              <div class="row">
+                <span class="float-left col-10">{{ file.name }}</span>
+                <i class="pi pi-pencil text-info mr-2"
+                  @click="showNewDescription[index] = !showNewDescription[index]"></i>
+                <i class="pi pi-trash text-danger" @click="removeOtherFile(index)"></i>
+              </div>
+              <div class="row mt-2" v-if="showNewDescription[index]">
+                <div class="inputr">
+                  <span class="font-weight-bold mt-2">Description : </span>
+                  <input v-model="new_descriptions[index]" type="text" class="form-control" />
+                  <div class="btn btn-secondary btn-sm mt-2 col" @click="setValueIdentifiant(file.name, index)"
+                    v-if="!isChosenOther">
+                    Enregistrer
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <span class="btn btn-sm btn-secondary float-left mt-1" v-if="!showSave">
+          <span class="font-weight-bold" @click="triggerFileUpload()">Ajouter autre(s) fichier(s)</span>
+        </span>
+        <span class="btn btn-sm btn-secondary float-right mt-1" v-if="showSave">
+          <span class="font-weight-bold" @click="uploadOtherFiles()">Traiter le(s) fichier(s)</span>
+        </span>
+        <div class="float-left mb-2" style="color: darkslategrey;" v-if="loadingFile">
+          <ProgressSpinner style="width: 30px; height: 30px" strokeWidth="8" fill="transparent" animationDuration=".5s"
+            aria-label="Custom ProgressSpinner" class="col" />
+        </div>
+      </div>
+      <h5 class="border-bottom"></h5>
+      <h5 class="text-center">Historique</h5>
+      <h5 class="border-bottom mb-2"></h5>
+
+      <ul class="list-group list-group-flush history-list">
+        <li class="list-group-item border-0 font-weight-bold mb-1 item-history" :class="item[0] == selectedItem ||
+          item[0] == selectedItem2 ||
+          isItemHovered(item)
+          ? 'selected-item'
+          : 'unselected-item'
+          " v-for="(item, index) in labelsName" :key="index" @mouseover="handleMouseOver(index, item)"
+          @mouseleave="handleMouseLeave(item)" @click="selectItem(item)">
+          <div>
+            <template v-if="isEditing && editingItemId === item[0]">
+              <div class="input">
+                <input v-model="newName" @blur="saveEdit(item)" @keyup.enter="saveEdit(item)" type="text"
+                  class="form-control" />
+              </div>
+            </template>
+            <template v-else>
+              <span class="text-truncated">{{
+                item[1]
+                }}</span>
+            </template>
+            <span class="setting pr-2"
+              v-show="showPlay === index || item[0] == selectedItem || item[0] == selectedItem2" id="dropdownMenuButton"
+              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i class="pi pi-ellipsis-h cursor-pointer font-weight-bold style-icon"></i>
+            </span>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+              <a class="dropdown-item" href="#" @click="startEdit(item)">
+                <i class="pi pi-pencil mr-2"></i>
+                <span>Renommer</span>
+              </a>
+              <a class="dropdown-item text-danger" href="#" @click="setToDeleteHistory(item[0])">
+                <i class="pi pi-trash mr-2"></i>
+                <span>Supprimer</span>
+              </a>
+            </div>
+          </div>
+        </li>
+      </ul>
+
+      <Dialog v-model:visible="visibleHistory" modal header="Supprimer un Historique" :style="{ width: '25rem' }">
+        <span class="text-surface-500 dark:text-surface-400 block mb-8">
+          Êtes-vous sûr de vouloir supprimer cette Historique ?
+        </span>
+        <div class="flex justify-end gap-2">
+          <button type="button" class="btn btn-secondary" @click="visibleHistory = false">Annuler</button>
+          <button type="button" class="btn btn-danger" @click="removeItem()">Supprimer</button>
+        </div>
+      </Dialog>
+      <input type="file" accept="application/pdf,application/msword,text/plain,.docx" id="formFile" ref="fileInput"
+        multiple @change="handleFileChange" style="display: none;" />
+
+    </div>
     <div class="fixed-bottom d-flex justify-content-left">
-      <span 
-        class="btn btn-md mb-3 w-100 btn-new py-3 ml-2" 
-        @click="setShowNewConversation(false)" 
-        style="border: 0.5px solid black; max-width: 465px;">
+      <span class="btn btn-md mb-2 w-100 btn-new py-3 ml-2" @click="setShowNewConversation(false)">
         <span class="float-left">Nouvelle conversation</span>
         <i class="pi pi-plus-circle float-right mt-1"></i>
       </span>
     </div>
-    <Dialog v-model:visible="visible" modal header="Supprimer un fichier" :style="{ width: '25rem' }">
-      <span class="text-surface-500 dark:text-surface-400 block mb-8">
-        Êtes-vous sûr de vouloir supprimer ce fichier ?
-      </span>
-      <div class="flex justify-end gap-2">
-        <button type="button" class="btn btn-secondary" @click="visible = false">Annuler</button>
-        <button type="button" class="btn btn-danger" @click="deleteFile()">Supprimer</button>
-      </div>
-    </Dialog>
-
-    <Dialog v-model:visible="visibleHistory" modal header="Supprimer un Historique" :style="{ width: '25rem' }">
-      <span class="text-surface-500 dark:text-surface-400 block mb-8">
-        Êtes-vous sûr de vouloir supprimer cette Historique ?
-      </span>
-      <div class="flex justify-end gap-2">
-        <button type="button" class="btn btn-secondary" @click="visibleHistory = false">Annuler</button>
-        <button type="button" class="btn btn-danger" @click="removeItem()">Supprimer</button>
-      </div>
-    </Dialog>
-    <input type="file" accept="application/pdf,application/msword,text/plain,.docx" id="formFile" ref="fileInput"
-          multiple @change="handleFileChange" style="display: none;" />
-
   </div>
 </template>
 <script>
@@ -156,7 +158,6 @@ export default {
       showPlay: -1,
       playing_index: [],
       show: false,
-      visible: false,
       visibleHistory: false,
       hoveredIndex: null,
       identifiant: "",
@@ -214,7 +215,7 @@ export default {
       return this.$store.state.activeSetDescription;
     },
     descriptionSet() {
-      console.log("udfugufg",this.$store.state.descriptionSet);
+      console.log("udfugufg", this.$store.state.descriptionSet);
       return this.$store.state.descriptionSet;
     },
   },
@@ -228,7 +229,7 @@ export default {
       this.otherFiles.splice(index, 1);
       this.description.splice(index, 1);
       this.showNewDescription.splice(index, 1);
-      if(this.otherFiles.length == 0){
+      if (this.otherFiles.length == 0) {
         this.showSave = false;
       }
     },
@@ -237,10 +238,10 @@ export default {
     },
     setShowNewConversation(statut) {
       this.$store.dispatch('setShowNewConversation', statut);
-      this.$store.dispatch('setActiveSetDescription',false);
+      this.$store.dispatch('setActiveSetDescription', false);
       this.description = [];
       this.$store.dispatch('setShowTrait', false);
-      if(statut == false){
+      if (statut == false) {
         this.selectedItem = 0
         this.$store.dispatch('setFilesUpload', []);
       }
@@ -273,7 +274,7 @@ export default {
       this.getConversationChat(item);
       this.setShowNewConversation(true)
     },
-    getFilesByHistory(history_id){
+    getFilesByHistory(history_id) {
       HTTP.post("/files-by-history", {
         history_id: history_id,
       })
@@ -316,6 +317,7 @@ export default {
           });
           this.$store.dispatch('setIsLoading', false);
           this.$store.dispatch("setIsUpload", true);
+          this.treatedFile(item)
           this.$store.dispatch("sendMessage", {
             content: response.data["answer"],
             self_tf: false,
@@ -381,20 +383,6 @@ export default {
           console.error("Error occurred:", error);
         });
     },
-    deleteFile() {
-      HTTP
-        .post("/delete-file", {
-          file_id: this.deleteFileId,
-        })
-        .then((response) => {
-          this.getConversationChat(this.history_list)
-          this.getfileNameOfConversationChat()
-          this.visible = false
-        })
-        .catch((error) => {
-          console.error("Error occurred:", error);
-        });
-    },
     setValueIdentifiant(filename, index) {
       HTTP.post("/edit-description", {
         filename: filename,
@@ -416,20 +404,29 @@ export default {
       const fileInput = this.$refs.fileInput;
       if (fileInput && fileInput.files) {
         this.otherFiles = Array.from(fileInput.files);
-        this.otherFiles.forEach((file,index) => {
+        this.otherFiles.forEach((file, index) => {
           this.new_descriptions[index] = ""
         })
         this.showSave = true;
       }
       this.isChosenOther = true;
     },
-    async uploadOtherFiles(){
+    async treatedFile(item) {
+      this.$store.dispatch("setTreatedFile", true);
+      await HTTP.post("/treated-file", {
+        history_file_json: item[2],
+        history_id: item[0],
+      }).then(() => {
+        this.$store.dispatch("setTreatedFile", false);
+      })
+    },
+    async uploadOtherFiles() {
       const fileInput = this.$refs.fileInput;
       try {
         this.loadingFile = true;
         const formData = new FormData();
         let desc = []
-        this.otherFiles.forEach((fileItem,i) => {
+        this.otherFiles.forEach((fileItem, i) => {
           formData.append("new_files", fileItem);
           desc[i] = ""
         });
@@ -437,12 +434,12 @@ export default {
         this.new_descriptions.forEach(item => {
           formData.append("new_descriptions", item);
         });
-        
+
         formData.append("history_id", this.history_list[0])
         fileInput.value = null;
         await HTTP.post('/upload-other-files', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
-        }).then(()=>{
+        }).then(() => {
           this.getConversationChat(this.history_list)
           this.getfileNameOfConversationChat()
           this.showSave = false;
@@ -458,7 +455,7 @@ export default {
         // this.$store.dispatch("setfirstTimeUpload", true);
         // this.$store.dispatch('sendMessage', { content: response.data['answer'], self_tf: false });
       } catch (error) {
-        if(error.response && error.response.status !== 401){
+        if (error.response && error.response.status !== 401) {
           this.failedMessage()
           console.error("Error occurred:", error);
         }
@@ -467,7 +464,7 @@ export default {
         this.$store.dispatch("setIsLoadUpdate", false);
       }
     },
-    setDescription(){
+    setDescription() {
       this.$store.dispatch('setDescription', this.description)
     },
     uploadMessage() {
@@ -529,13 +526,18 @@ export default {
 };
 </script>
 <style scoped>
-.sidebar {
+.sidebar-class{
   height: 100%;
-  width: 490px;
-  max-width: 490px;
-  min-width: 490px !important;
+  width: 425px;
+  max-width: 425px;
+  min-width: 425px !important;
+}
+.sidebar {
+  max-height: 87%;
+  height: 87%;
+  min-height: 30%;
+  margin-top: 6px;
   color: black;
-  min-height: 90%;
   overflow-y: auto;
 }
 
@@ -594,15 +596,30 @@ export default {
 .style_file_upload {
   font-size: 12px;
 }
-.btn-new{
+
+.btn-new {
   font-weight: 500;
   background-color: #e3eaf2;
+  border: 0.5px solid black; 
+  max-width: 389px;
 }
-.btn-new:hover{
+
+.btn-new:hover {
   background-color: #d5dee8;
 }
-.history-list{
+
+.history-list {
   height: 100%;
+  overflow-y: auto;
+}
+.list-files{
+  max-height: 300px;
+  min-height: 50px; 
+  overflow-y: auto;
+}
+.other-files{
+  max-height: 200px;
+  min-height: 50px; 
   overflow-y: auto;
 }
 </style>

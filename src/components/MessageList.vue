@@ -87,10 +87,13 @@ export default {
     isLoading() {
       return this.store.state.isLoading;
     },
+    isTreatedFile() {
+      return this.store.state.isTreatedFile;
+    },
   },
   mounted() {
-    this.dropdown = this.$refs.messageList;
-    autoAnimate(this.dropdown, { duration: 500 });
+    // this.dropdown = this.$refs.messageList;
+    // autoAnimate(this.dropdown, { duration: 500 });
     this.$store.dispatch("restart");
     this.$store.dispatch("setIsUpload", false);
     this.adjustScrollbar(); // Adjust on mount

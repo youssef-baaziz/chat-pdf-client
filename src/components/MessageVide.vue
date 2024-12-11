@@ -10,13 +10,13 @@
         <div class="text-center content-btn">
           <label class="form-label cursor-pointer mt-3 mb-4 row" style="width: 130%;" v-if="!showTrait">
             <button class="btn btn-sm btn-secondary rounded font-weight-bold btn-upload" @click="triggerFileUpload()">
-              <i class="pi pi-spin pi-file font-weight-bold mr-4"></i>
-              <span>Ajout de fichier ( PDF / TXT / DOCX )</span>
+              <i class="pi pi-file font-weight-bold mr-4"></i>
+              <span>Ajout de fichier ( PDF / TXT / WORD )</span>
             </button>
           </label>
           <button class="btn btn-sm btn-secondary rounded font-weight-bold btn-upload row" @click="uploadFile()"
             v-if="showTrait">
-            <i class="pi pi-spin pi-cog font-weight-bold mr-4"></i>
+            <i class="pi pi-cog font-weight-bold mr-4"></i>
             <span>Traiter le(s) fichier(s)</span>
           </button>
         </div>
@@ -250,6 +250,7 @@ export default {
 
 .content-btn {
   text-align: center;
+  margin-left: 100px;
   /* Add any other styling here */
 }
 

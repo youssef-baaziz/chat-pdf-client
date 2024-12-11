@@ -5,7 +5,14 @@
       <Header />
       <ChatVide v-if="showNewConversation==false" ref="messageVideRef"/>
       <ChatWindow v-if="showNewConversation"/>
-      <inputChat v-if="showNewConversation" />
+      <inputChat v-if="showNewConversation && !isTreatedFile" class="input-chat"/>
+      <div v-if="showNewConversation && isTreatedFile">
+        <div class=" text-center mb-2" style="color: darkslategrey;">
+          <ProgressSpinner style="width: 30px; height: 30px" strokeWidth="8" fill="transparent" animationDuration=".5s"
+            aria-label="Custom ProgressSpinner" class="col mr-3" />
+            <span class="font-weight-bold">En cours de traitement du fichier(s)...</span>
+        </div>
+      </div>
       <div v-if="showModal" class="modal">
         <div class="modal-content">
           <h2>Votre session a expiré</h2>
@@ -23,6 +30,7 @@ import Header from '../components/Header.vue';
 import ChatWindow from '../components/MessageList.vue';
 import ChatVide from '../components/MessageVide.vue';
 import inputChat from '../components/UserInput.vue';
+import ProgressSpinner from 'primevue/progressspinner';
 import { useStore } from "vuex";
 
 export default {
@@ -32,7 +40,8 @@ export default {
     Header,
     ChatWindow,
     ChatVide,
-    inputChat
+    inputChat,
+    "ProgressSpinner": ProgressSpinner
   },
   data() {
     return {
@@ -58,6 +67,9 @@ export default {
     showNewConversation() {
       return this.store.state.showNewConversation;
     },
+    isTreatedFile() {
+      return this.store.state.isTreatedFile;
+    },
   },
   methods: {
     async redirectToLogin() {
@@ -66,7 +78,7 @@ export default {
       this.$store.dispatch('setActiveComponent',false);
     },
     updateStyle() {
-      if (window.innerWidth <= 755 || !this.openSideBar) {
+      if (window.innerWidth <= 1300 || !this.openSideBar) {
         this.$store.dispatch('setShowSide', false);
       } else {
         this.$store.dispatch('setShowSide', true);

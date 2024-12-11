@@ -73,7 +73,8 @@ const store = createStore({
         showTrait: false,
         activeComponent: false,
         activeSetDescription: false,
-        descriptionSet: false
+        descriptionSet: false,
+        isTreatedFile: false 
     },
     mutations: {
         INIT_DATA(state) {
@@ -88,6 +89,9 @@ const store = createStore({
         },
         setIsUpload(state, value) {
             state.isUpload = value;
+        },
+        setTreatedFile(state, value) {
+            state.isTreatedFile = value;
         },
         setSuccessAlert(state, value) {
             state.successAlert = value;
@@ -218,6 +222,9 @@ const store = createStore({
         },
         setIsUpload(context, value) {
             context.commit("setIsUpload", value);
+        },
+        setTreatedFile(context, value) {
+            context.commit("setTreatedFile", value);
         },
         setSuccessAlert(context, value) {
             context.commit("setSuccessAlert", value)

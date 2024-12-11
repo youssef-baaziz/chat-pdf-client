@@ -16,9 +16,9 @@ const submitMessage = () => {
 </script>
 
 <template>
-  <div class="row mx-auto">
-    <div class="float-right py-4 mt-auto fixed-bottom col-4"></div>
-    <div class="float-left py-4 mt-auto fixed-bottom col-8 mx-auto  bg-white" :style="{ left: showSidebar ? '15%' : '0%' }">
+  <div class="row mx-auto mt-2 text-center">
+    <div class="float-right py-4 mt-auto fixed-bottom col-7"></div>
+      <div class="float-left py-4 mt-auto fixed-bottom col-5 mx-auto" :class="{ 'classInput': showSidebar }">
       <div class=" mb-3 mt-2 flex ">
         <input type="text"
           class="rounded-l-xl w-full focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
@@ -47,5 +47,10 @@ input {
 
 input:focus {
   outline: none;
+}
+
+.classInput{
+  left: 21%;
+  bottom: -2%;
 }
 </style>
